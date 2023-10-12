@@ -15,15 +15,16 @@ type CheckingStatus = '❓' | '⌛' | '✅' | '🚨';
 type InitStatus = 'ongoing' | 'allpass' | 'failed';
 
 export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
-  const [initChecks, setInitChecks] = useState<[CheckingStatus, string][]>([]);
+  const [initChecks, setInitChecks] = useState<[CheckingStatus, string][]>([
+    ['❓', 'check db store path'],
+    ['❓', 'check db schema existence'],
+    ['❓', 'check db schema version'],
+    ['❓', 'upgrade db schema'],
+  ]);
   const initStatusSet = new Set<CheckingStatus>(initChecks.map(e => e[0]));
   const initStatus: InitStatus = initStatusSet.has('🚨') ? 'failed' : (
     initStatusSet.has('❓') || initStatusSet.has('⌛') ? 'ongoing' : 'allpass'
   )
-
-  setTimeout(() => {
-    setInitChecks([...initChecks, ['⌛', 'zxc']])
-  }, 1000)
 
   const checkingPrompt = `## Trying to synchronize the application
 ${initChecks.map(([status, prompt]) => `- ${status} ${prompt}`).join("\n")}
