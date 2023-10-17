@@ -5,13 +5,13 @@ import { boolean } from "drizzle-orm/mysql-core";
 import { type } from "os";
 import { Some, None, Option } from "ts-results-es";
 import { stringify } from "querystring";
+import InitError from "./init-error";
 
 export interface InitWrapperProps {
   children: React.ReactNode;
 }
 
-type DBVersionCheckError = 'DB version is wrong' | '';
-type InitError = DBVersionCheckError;
+type InitErrorMarkDown = string;
 
 // '❓' waiting for execution
 // '⌛' during execution
@@ -20,7 +20,7 @@ type InitError = DBVersionCheckError;
 type InitTaskStatus = '❓' | '⌛' | '✅' | '🚨';
 type InitStatus = 'ongoing' | 'allpass' | 'failed';
 type TaskDescOrErrMsg = string;
-type InitTaskFunc = () => Promise<Option<InitError>>
+type InitTaskFunc = () => Promise<Option<InitErrorMarkDown>>
 type InitTask = [InitTaskStatus, TaskDescOrErrMsg, InitTaskFunc];
 
 const checkDBStorePath: InitTaskFunc = async () => {
@@ -35,7 +35,7 @@ const checkDBSchemaExistence: InitTaskFunc = async () => {
 
 const checkDBSchemaVersion: InitTaskFunc = async () => {
   await new Promise(f => setTimeout(f, 1000));
-  return Some('DB version is wrong' as DBVersionCheckError)
+  return Some('# DB version is wrong' as InitErrorMarkDown)
 };
 
 const upgradeDBSchema: InitTaskFunc = async () => {
@@ -115,14 +115,20 @@ ${initTasks.map(
     ([status, prompt]) => `- ${status} ${prompt} ${status == '⌛' ? progressBar : ''}`).join("\n")
     }
 `
-  return initStatus != 'allpass' ? <Detail
-    navigationTitle="Failed to initialize your snippets store"
-    markdown={checkingPrompt}
-    isLoading={initStatus == 'ongoing' ? true : false}
-    actions={
-      <ActionPanel>
-        <Action title="Change Checking" onAction={() => { console.log("checking") }} />
-      </ActionPanel>
-    }
-  /> : <>{children}</>
+  // by right the errMsg will always be valid markdown string
+  // because we use it when and only when initStatus is failed
+  const errMsg = initTasks.find(([status, ,]) => status == '🚨')?.[1]
+
+  return initStatus == 'allpass' ? <>{children}</> : (
+    initStatus == 'failed' ? <InitError errMarkdown={errMsg ? errMsg : ''} /> : <Detail
+      navigationTitle="Failed to initialize your snippets store"
+      markdown={checkingPrompt}
+      isLoading={initStatus == 'ongoing' ? true : false}
+      actions={
+        <ActionPanel>
+          <Action title="Change Checking" onAction={() => { console.log("checking") }} />
+        </ActionPanel>
+      }
+    />
+  )
 }
