@@ -4,14 +4,12 @@ import { FC, useState, useEffect } from "react"
 import { boolean } from "drizzle-orm/mysql-core";
 import { type } from "os";
 import { Some, None, Option } from "ts-results-es";
-import { stringify } from "querystring";
 import InitError from "./init-error";
+import { checkDBStorePath, checkDBSchemaExistence, checkDBSchemaVersion, upgradeDBSchema, InitTaskFunc } from "./init-tasks";
 
 export interface InitWrapperProps {
   children: React.ReactNode;
 }
-
-type InitErrorMarkDown = string;
 
 // '❓' waiting for execution
 // '⌛' during execution
@@ -20,28 +18,7 @@ type InitErrorMarkDown = string;
 type InitTaskStatus = '❓' | '⌛' | '✅' | '🚨';
 type InitStatus = 'ongoing' | 'allpass' | 'failed';
 type TaskDescOrErrMsg = string;
-type InitTaskFunc = () => Promise<Option<InitErrorMarkDown>>
 type InitTask = [InitTaskStatus, TaskDescOrErrMsg, InitTaskFunc];
-
-const checkDBStorePath: InitTaskFunc = async () => {
-  await new Promise(f => setTimeout(f, 1000));
-  return None
-};
-
-const checkDBSchemaExistence: InitTaskFunc = async () => {
-  await new Promise(f => setTimeout(f, 1000));
-  return None
-};
-
-const checkDBSchemaVersion: InitTaskFunc = async () => {
-  await new Promise(f => setTimeout(f, 1000));
-  return Some('# DB version is wrong' as InitErrorMarkDown)
-};
-
-const upgradeDBSchema: InitTaskFunc = async () => {
-  await new Promise(f => setTimeout(f, 1000));
-  return None
-};
 
 export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
   const [initTasks, setInitTasks] = useState<InitTask[]>([
@@ -100,7 +77,7 @@ export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
     }).catch(err => {
       console.log("use effect, unexpected issue. chanege status to failed", execTaskId);
       setInitTasks(initTasks.map((task, idx) => idx == execTaskId ?
-        ['🚨', stringify(err), task[2]] : task));
+        ['🚨', String(err), task[2]] : task));
     })
     return clearFunc;
   }, [execTaskId])
@@ -117,7 +94,8 @@ ${initTasks.map(
 `
   // by right the errMsg will always be valid markdown string
   // because we use it when and only when initStatus is failed
-  const errMsg = initTasks.find(([status, ,]) => status == '🚨')?.[1]
+  const errMsg = initTasks.find(([status, ,]) => status == '🚨')?.[1];
+  console.log("rendering!");
 
   return initStatus == 'allpass' ? <>{children}</> : (
     initStatus == 'failed' ? <InitError errMarkdown={errMsg ? errMsg : ''} /> : <Detail
