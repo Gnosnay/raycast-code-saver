@@ -21,6 +21,7 @@ type TaskDescOrErrMsg = string;
 type InitTask = [InitTaskStatus, TaskDescOrErrMsg, InitTaskFunc];
 
 export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
+  console.log("rendering!");
   const [initTasks, setInitTasks] = useState<InitTask[]>([
     ['❓', 'check db store path', checkDBStorePath],
     ['❓', 'check db schema existence', checkDBSchemaExistence],
@@ -29,11 +30,6 @@ export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
   ]);
   const [execTaskId, setExecTaskId] = useState<number>(0);
   const [progressBar, setProgressBar] = useState<string>('');
-
-  setTimeout(() => {
-    const newBar = Array((progressBar.length + 1) % 4).fill('.').join('');
-    setProgressBar(newBar);
-  }, 500)
 
   useEffect(() => {
     console.log("use effect, execTaskId:", execTaskId);
@@ -95,7 +91,23 @@ ${initTasks.map(
   // by right the errMsg will always be valid markdown string
   // because we use it when and only when initStatus is failed
   const errMsg = initTasks.find(([status, ,]) => status == '🚨')?.[1];
-  console.log("rendering!");
+
+  // use it to impl loading animation
+  useEffect(() => {
+    console.log("useEffect, set timeout");
+    const timeout = setTimeout(() => {
+      const newBar = Array((progressBar.length + 1) % 4).fill('.').join('');
+      setProgressBar(newBar);
+    }, 500);
+    if (initStatus != 'ongoing') {
+      console.log("useEffect, not on going, clear timeout");
+      clearTimeout(timeout)
+    }
+    return () => {
+      console.log("useEffect, unmount, clear timeout");
+      clearTimeout(timeout)
+    }
+  }, [initTasks, execTaskId, progressBar])
 
   return initStatus == 'allpass' ? <>{children}</> : (
     initStatus == 'failed' ? <InitError errMarkdown={errMsg ? errMsg : ''} /> : <Detail
