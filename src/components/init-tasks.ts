@@ -6,6 +6,7 @@ import { arch } from 'os'
 import { ARM_BINDING, DB_NAME, X64_BINDING } from "../lib/constants/db-name";
 import { drizzle, BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
+import { Preferences } from "../lib/types/preferences";
 
 export type InitErrorMarkDown = string;
 export type InitTaskFunc = () => Promise<Option<InitErrorMarkDown>>
