@@ -18,6 +18,28 @@
       "description": "Choose the folder you wanna create store in. If you already have one store, plesae make sure it is named as `code-saver.db` and is under this folder.",
       "type": "directory",
       "required": true
+    },
+    {
+      "title": "Backup Dates",
+      "name": "backupDates",
+      "description": "How many days do you want to backup your data?",
+      "type": "dropdown",
+      "data": [
+        {
+          "title": "Past 3 Days",
+          "value": "3Days"
+        },
+        {
+          "title": "Past One Week",
+          "value": "1Week"
+        },
+        {
+          "title": "Past One Month",
+          "value": "1Month"
+        }
+      ],
+      "default": "1Week",
+      "required": true
     }
   ],
   "commands": [
