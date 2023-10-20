@@ -1,0 +1,13 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1697819739626,
+      "tag": "0000_productive_martin_li",
+      "breakpoints": true
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { boolean } from "drizzle-orm/mysql-core";
 import { type } from "os";
 import { Some, None, Option } from "ts-results-es";
 import InitError from "./init-error";
-import { checkDBStorePath, checkDBSchemaExistence, checkDBSchemaVersion, upgradeDBSchema, InitTaskFunc } from "./init-tasks";
+import { checkDBStorePath, upgradeDBSchema, InitTaskFunc, backupDB } from "./init-tasks";
 
 export interface InitWrapperProps {
   children: React.ReactNode;
@@ -24,8 +24,7 @@ export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
   console.log("rendering!");
   const [initTasks, setInitTasks] = useState<InitTask[]>([
     ['❓', 'check db store path', checkDBStorePath],
-    ['❓', 'check db schema existence', checkDBSchemaExistence],
-    ['❓', 'check db schema version', checkDBSchemaVersion],
+    ['❓', 'backup the DB Store', backupDB],
     ['❓', 'upgrade db schema', upgradeDBSchema],
   ]);
   const [execTaskId, setExecTaskId] = useState<number>(0);
