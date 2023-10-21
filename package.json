@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "code-saver",
-  "title": "code-saver",
+  "title": "Code Saver",
   "description": "store your code snippets and export them freely when you need it.",
   "icon": "command-icon.png",
   "author": "Yansong",
@@ -50,14 +50,14 @@
     {
       "name": "search-snippets",
       "title": "Search Code Snippets",
-      "subtitle": "Cacher",
-      "description": "Search your Cacher snippets.",
+      "subtitle": "Code Saver",
+      "description": "Search your snippets.",
       "mode": "view"
     },
     {
       "name": "create-snippet",
       "title": "Create Code Snippet",
-      "subtitle": "Cacher",
+      "subtitle": "Code Saver",
       "description": "Create new personal/team snippet.",
       "mode": "view"
     }
