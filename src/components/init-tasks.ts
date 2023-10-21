@@ -1,4 +1,4 @@
-import { Err, None, Option, Some } from "ts-results-es";
+import { None, Option, Some } from "ts-results-es";
 import { DB_NAME, MIGRATIONS_FOLDER } from "../lib/constants/db-name";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { GetDBInstance, UserDefinedDBPath } from "../lib/storage/db-instance";
