@@ -1,9 +1,5 @@
-import { Action, ActionPanel, Detail, openExtensionPreferences, getPreferenceValues } from "@raycast/api";
-import { DB_NAME } from "../lib/constants/db-name";
+import { Action, ActionPanel, Detail } from "@raycast/api";
 import { FC, useState, useEffect } from "react"
-import { boolean } from "drizzle-orm/mysql-core";
-import { type } from "os";
-import { Some, None, Option } from "ts-results-es";
 import InitError from "./init-error";
 import { checkDBStorePath, upgradeDBSchema, InitTaskFunc, backupDB, InitErrorMarkDown } from "./init-tasks";
 
