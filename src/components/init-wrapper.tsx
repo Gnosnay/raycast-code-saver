@@ -5,7 +5,7 @@ import { boolean } from "drizzle-orm/mysql-core";
 import { type } from "os";
 import { Some, None, Option } from "ts-results-es";
 import InitError from "./init-error";
-import { checkDBStorePath, upgradeDBSchema, InitTaskFunc, backupDB } from "./init-tasks";
+import { checkDBStorePath, upgradeDBSchema, InitTaskFunc, backupDB, InitErrorMarkDown } from "./init-tasks";
 
 export interface InitWrapperProps {
   children: React.ReactNode;
@@ -16,8 +16,9 @@ export interface InitWrapperProps {
 // '✅' executed successfully
 // '🚨' something wrong when it is executed
 type InitTaskStatus = '❓' | '⌛' | '✅' | '🚨';
+// InitStatus indicats whether all init task is executed completed
 type InitStatus = 'ongoing' | 'allpass' | 'failed';
-type TaskDescOrErrMsg = string;
+type TaskDescOrErrMsg = string | InitErrorMarkDown;
 type InitTask = [InitTaskStatus, TaskDescOrErrMsg, InitTaskFunc];
 
 export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
@@ -27,55 +28,58 @@ export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
     ['❓', 'backup the DB Store', backupDB],
     ['❓', 'upgrade db schema', upgradeDBSchema],
   ]);
-  const [execTaskId, setExecTaskId] = useState<number>(0);
+  // currentTaskId is the index of initTasks
+  const [currentTaskId, setCurrentTaskId] = useState<number>(0);
+  // it will be one text playing loop from . to ...
+  // it will be appended 
   const [progressBar, setProgressBar] = useState<string>('');
 
   useEffect(() => {
-    console.log("use effect, execTaskId:", execTaskId);
+    console.log("use effect, execTaskId:", currentTaskId);
     let ignore = false;
     const clearFunc = () => {
       ignore = true;
-      console.log("clear effects, execTaskId:", execTaskId);
+      console.log("clear effects, execTaskId:", currentTaskId);
     }
-    if (execTaskId >= initTasks.length) {
+    if (currentTaskId >= initTasks.length) {
       return clearFunc;
     }
-    const [status, desc, initFunc] = initTasks[execTaskId];
+    const [status, desc, initFunc] = initTasks[currentTaskId];
 
     if (status != '❓') {
-      console.log("status is not ❓. (execTaskId, desc, status):", execTaskId, desc, status);
+      console.log("status is not ❓. (execTaskId, desc, status):", currentTaskId, desc, status);
       return clearFunc;
     }
     console.log(
       "use effect, status is not executed. (execTaskId, desc, ignore):",
-      execTaskId, desc, ignore
+      currentTaskId, desc, ignore
     );
     if (ignore) {
       return clearFunc;
     }
-    setInitTasks(initTasks.map((task, idx) => idx == execTaskId ?
+    setInitTasks(initTasks.map((task, idx) => idx == currentTaskId ?
       ['⌛', task[1], task[2]] : task));
-    console.log("use effect, executed func", execTaskId);
+    console.log("use effect, executed func", currentTaskId);
     initFunc().then(res => {
-      console.log("use effect, get result of func", execTaskId);
+      console.log("use effect, get result of func", currentTaskId);
       if (res.none) {
-        console.log("use effect, chanege status to success", execTaskId);
-        setInitTasks(initTasks.map((task, idx) => idx == execTaskId ?
+        console.log("use effect, chanege status to success", currentTaskId);
+        setInitTasks(initTasks.map((task, idx) => idx == currentTaskId ?
           ['✅', task[1], task[2]] : task));
-        console.log("use effect, change to next id, curr id:", execTaskId);
-        setExecTaskId(execTaskId + 1);
+        console.log("use effect, change to next id, curr id:", currentTaskId);
+        setCurrentTaskId(currentTaskId + 1);
       } else {
-        console.log("use effect, chanege status to failed", execTaskId);
-        setInitTasks(initTasks.map((task, idx) => idx == execTaskId ?
+        console.log("use effect, chanege status to failed", currentTaskId);
+        setInitTasks(initTasks.map((task, idx) => idx == currentTaskId ?
           ['🚨', res.val, task[2]] : task));
       }
     }).catch(err => {
-      console.log("use effect, unexpected issue. chanege status to failed", execTaskId);
-      setInitTasks(initTasks.map((task, idx) => idx == execTaskId ?
+      console.log("use effect, unexpected issue. chanege status to failed", currentTaskId);
+      setInitTasks(initTasks.map((task, idx) => idx == currentTaskId ?
         ['🚨', String(err), task[2]] : task));
     })
     return clearFunc;
-  }, [execTaskId])
+  }, [currentTaskId])
 
   const initStatusSet = new Set<InitTaskStatus>(initTasks.map(e => e[0]));
   const initStatus: InitStatus = initStatusSet.has('🚨') ? 'failed' : (
@@ -93,24 +97,24 @@ ${initTasks.map(
 
   // use it to impl loading animation
   useEffect(() => {
-    console.log("useEffect, set timeout");
+    console.log("useEffect, progressBar, set timeout");
     const timeout = setTimeout(() => {
       const newBar = Array((progressBar.length + 1) % 4).fill('.').join('');
       setProgressBar(newBar);
     }, 500);
     if (initStatus != 'ongoing') {
-      console.log("useEffect, not on going, clear timeout");
+      console.log("useEffect, progressBar, not on going, clear timeout");
       clearTimeout(timeout)
     }
     return () => {
-      console.log("useEffect, unmount, clear timeout");
+      console.log("useEffect, progressBar, unmount, clear timeout");
       clearTimeout(timeout)
     }
-  }, [initTasks, execTaskId, progressBar])
+  }, [initTasks, currentTaskId, progressBar])
 
   return initStatus == 'allpass' ? <>{children}</> : (
     initStatus == 'failed' ? <InitError errMarkdown={errMsg ? errMsg : ''} /> : <Detail
-      navigationTitle="Failed to initialize your snippets store"
+      navigationTitle="Trying to initialize your snippets store"
       markdown={checkingPrompt}
       isLoading={initStatus == 'ongoing' ? true : false}
       actions={
