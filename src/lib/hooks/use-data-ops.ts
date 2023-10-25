@@ -18,6 +18,9 @@ export function useDataFetch<T>(
         pageSize?: number,
     }
 ) {
+    // for now we just return all data as default
+    // because raycast doesn't have hit botton loading
+    // or next page feature
     const model = function (t: typeof data) {
         switch (t) {
             case "label":
