@@ -1,7 +1,7 @@
 import { None, Option, Some } from "ts-results-es";
-import { DB_NAME, MIGRATIONS_FOLDER } from "../lib/constants/db-name";
+import { DB_NAME, MIGRATIONS_FOLDER } from "../../lib/constants/db-name";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { GetDBInstance, UserDefinedDBPath } from "../lib/storage/db-instance";
+import { GetDBInstance, UserDefinedDBPath } from "../../lib/storage/db-instance";
 import { resolve } from "path";
 import { environment, getPreferenceValues } from "@raycast/api";
 import * as async_fs from "fs/promises"

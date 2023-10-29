@@ -1,10 +1,26 @@
+import { SnippetMarkdownFormatType } from "../constants/db-name"
+
 export type Snippet = {
-    id: number,
     uuid: string,
     createAt: Date,
     updateAt: Date,
 
+    title: string,
+    fileName: string,
+    content: string,
+    formatType: SnippetMarkdownFormatType,
+    library: Library,
+    labels: Label[],
+}
+
+export type Label = {
+    uuid: string,
+
     colorHex: string, // #ffffff
     title: string,
-    description: string,
+}
+
+export type Library = {
+    uuid: string
+    name: string
 }
