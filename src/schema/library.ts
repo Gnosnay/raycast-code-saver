@@ -10,7 +10,7 @@ export const LibraryModel = sqliteTable('library_tab', {
     createAt: integer('create_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()), // Date
     updateAt: integer('update_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()), // Date
 
-    name: text('name').notNull(),
+    name: text('name').notNull().unique(),
 });
 
 export const LibraryModelRelations = relations(LibraryModel, ({ many }) => ({

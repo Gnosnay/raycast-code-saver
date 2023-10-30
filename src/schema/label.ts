@@ -15,7 +15,7 @@ export const LabelModel = sqliteTable('label_tab', {
         const getRGB = () => Math.floor(Math.random() * 127) + 127;
         return ['#', getRGB(), getRGB(), getRGB()].join()
     }),
-    title: text('title').notNull(),
+    title: text('title').notNull().unique(),
 });
 
 export const LabelModelRelations = relations(LabelModel, ({ many }) => ({
