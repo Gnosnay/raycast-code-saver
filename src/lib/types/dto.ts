@@ -24,3 +24,12 @@ export type Library = {
     uuid: string
     name: string
 }
+
+export type SnippetCreationReq = {
+    title: string,
+    fileName: string,
+    content: string,
+    formatType: SnippetMarkdownFormatType,
+    libraryUUID: string,
+    labelsUUID: string[],
+}
