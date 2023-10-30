@@ -9,7 +9,6 @@ import { ItemDetail } from "./item-detail";
 import { SearchBarAccessory } from "./search-bar-accessory";
 
 
-
 function SnippetItem({ snippet }: { snippet: Snippet }) {
     console.log("SnippetItem render!!!!")
     return (
@@ -29,36 +28,18 @@ export default function SearchSnippetsEntry() {
     const [searchQuery, setSearchQuery] = useState("");
     const [filter, setFilter] = useState<SNIPPETS_FILTER>("all");
     const isLoading = isLabelLoading || isLibLoading || isSnippetLoading;
-    const errMsg = function (loadLabelErr, loadLibErr, loadSnippetErr) {
+    const errMsg = function (err) {
         if (loadLabelErr !== undefined) {
-            return ` # Something wrong
-Some errors happened when fetching labels from database. 
+            return `# Something wrong
+Some errors happened when fetching labels, libraries or snippets from database. 
 Error details are as follows:
 \`\`\`
-${loadLabelErr instanceof Error ? loadLabelErr.stack : String(loadLabelErr)}
-\`\`\`
-`;
-        }
-        if (loadLibErr !== undefined) {
-            return ` # Something wrong
-Some errors happened when fetching librarys from database. 
-Error details are as follows:
-\`\`\`
-${loadLibErr instanceof Error ? loadLibErr.stack : String(loadLibErr)}
-\`\`\`
-`;
-        }
-        if (loadSnippetErr !== undefined) {
-            return ` # Something wrong
-Some errors happened when fetching snippets from database. 
-Error details are as follows:
-\`\`\`
-${loadSnippetErr instanceof Error ? loadSnippetErr.stack : String(loadSnippetErr)}
+${err instanceof Error ? err.stack : String(err)}
 \`\`\`
 `;
         }
         return null;
-    }(loadLabelErr, loadLibErr, loadSnippetErr);
+    }(loadLabelErr || loadLibErr || loadSnippetErr);
 
     const trimmedSearchQuery = searchQuery.trim().toLocaleLowerCase();
     const filteredSnippets = useMemo(() => {
