@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Form, Icon, LaunchProps, List, Toast, popToRoot, showToast, useNavigation } from "@raycast/api";
+import { Action, ActionPanel, Form, Icon, LaunchProps, Toast, popToRoot, showToast, useNavigation } from "@raycast/api";
 import { createSnippet, useDataFetch } from "../../lib/hooks/use-data-ops";
 import { Label, Library } from "../../lib/types/dto";
 import InitError from "../init/init-error";
@@ -49,8 +49,19 @@ export default function CreateSnippetEntry({ props }: { props: LaunchProps<{ dra
     }
 
     async function handleSubmit(values: SnippetValues) {
+        if (values.title.length === 0) {
+            setTitleError("Snippet title is required");
+            return;
+        }
+        if (values.fileName.length === 0) {
+            setFileNameError("Filename is required");
+            return
+        }
+        if (values.content.length === 0) {
+            setContentError("File content is required");
+            return
+        }
         setIsSubmitting(true);
-        console.log("handleSubmit", values)
         const response = await createSnippet({
             title: values.title,
             fileName: values.fileName,
@@ -110,6 +121,7 @@ ${err instanceof Error ? err.stack : String(err)}
                         dropTitleErrorIfNeeded();
                     }
                 }}
+                autoFocus={true}
                 defaultValue={draftValues?.title ?? ""}
             />
             <Form.TextField
@@ -149,7 +161,7 @@ ${err instanceof Error ? err.stack : String(err)}
                     <Form.Dropdown.Item value={lib.uuid} key={lib.uuid} title={lib.name} icon={getAvatarIcon(lib.name)} />
                 ))}
             </Form.Dropdown>
-            <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels}>
+            <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels} storeValue={true}>
                 {allLabels?.map((label) => (
                     <Form.TagPicker.Item key={label.uuid} title={label.title} value={label.uuid} icon={labelIcon(label)} />
                 ))}
