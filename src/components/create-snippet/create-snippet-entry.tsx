@@ -26,6 +26,7 @@ export default function CreateSnippetEntry({ props }: { props: LaunchProps<{ dra
     const [titleError, setTitleError] = useState<string | undefined>();
     const [fileNameError, setFileNameError] = useState<string | undefined>();
     const [contentError, setContentError] = useState<string | undefined>();
+    const [libraryError, setLibraryError] = useState<string | undefined>();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const { push } = useNavigation();
@@ -45,6 +46,12 @@ export default function CreateSnippetEntry({ props }: { props: LaunchProps<{ dra
     function dropContentErrorIfNeeded() {
         if (contentError && contentError.length > 0) {
             setContentError(undefined);
+        }
+    }
+
+    function dropLibraryErrorIfNeeded() {
+        if (libraryError && libraryError.length > 0) {
+            setLibraryError(undefined);
         }
     }
 
@@ -156,7 +163,13 @@ ${err instanceof Error ? err.stack : String(err)}
                 <Form.Dropdown.Item value="freestyle" key="freestyle" title="Freestyle" icon={Icon.Person} />
                 <Form.Dropdown.Item value="tldr" key="tldr" title="TLDR" icon={Icon.Building} />
             </Form.Dropdown>
-            <Form.Dropdown id="libraryUUID" title="Library">
+            <Form.Dropdown id="libraryUUID" title="Library" error={libraryError} onBlur={(event) => {
+                if (event.target.value?.length === 0) {
+                    setLibraryError("Library is required");
+                } else {
+                    dropLibraryErrorIfNeeded();
+                }
+            }}>
                 {allLibs?.map((lib) => (
                     <Form.Dropdown.Item value={lib.uuid} key={lib.uuid} title={lib.name} icon={getAvatarIcon(lib.name)} />
                 ))}
