@@ -33,3 +33,8 @@ export type SnippetCreationReq = {
     libraryUUID: string,
     labelsUUID: string[],
 }
+
+export type LibraryReq = {
+    uuid?: string
+    name: string
+}

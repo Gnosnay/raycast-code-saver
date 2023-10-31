@@ -6,8 +6,10 @@ import { SnippetMarkdownFormatType } from "../../lib/constants/db-name";
 import { useState } from "react";
 import { getAvatarIcon } from "@raycast/utils";
 import { labelIcon } from "../../lib/utils/snippet-utils";
+import CreateOrUpdateLibraryEntry from "./library-entry";
 
 export interface SnippetValues {
+    snippetUUID?: string
     title: string
     fileName: string
     content: string
@@ -16,8 +18,8 @@ export interface SnippetValues {
     labelsUUID: string[]
 }
 
-export default function CreateSnippetEntry({ props }: { props: LaunchProps<{ draftValues: SnippetValues }> }) {
-    const { isLoading: isLibLoading, data: allLibs, error: loadLibErr } = useDataFetch<Library>('library');
+export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchProps<{ draftValues: SnippetValues }> }) {
+    const { isLoading: isLibLoading, data: allLibs, error: loadLibErr, revalidate: revalidateLib } = useDataFetch<Library>('library');
     const { isLoading: isLabelLoading, data: allLabels, error: loadLabelErr } = useDataFetch<Label>('label');
 
     const isLoading = isLibLoading || isLabelLoading;
@@ -111,9 +113,11 @@ ${err instanceof Error ? err.stack : String(err)}
             isLoading={isLoading || isSubmitting}
             actions={
                 <ActionPanel>
-                    <Action.SubmitForm onSubmit={handleSubmit} title="Save Snippet" />
+                    <Action.SubmitForm icon={Icon.Check} onSubmit={handleSubmit} title="Save Snippet" />
+                    <Action.Push icon={Icon.Plus} target={<CreateOrUpdateLibraryEntry onSuccess={() => revalidateLib()} />} title="Create Library" />
                 </ActionPanel>
             }
+            navigationTitle={draftValues?.snippetUUID ? "Update Snippet" : "Create New Snippet"}
         >
             <Form.TextField
                 id="title"
