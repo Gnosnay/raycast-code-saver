@@ -1,5 +1,5 @@
 import { Action, ActionPanel, Form, Toast, showToast, useNavigation } from "@raycast/api";
-import { createOrUpdateLibrary, useDataFetch } from "../../lib/hooks/use-data-ops";
+import { createOrUpdateLibrary as upsertLibrary, useDataFetch } from "../../lib/hooks/use-data-ops";
 import { Library } from "../../lib/types/dto";
 import InitError from "../init/init-error";
 import { useState } from "react";
@@ -28,7 +28,7 @@ export default function CreateOrUpdateLibraryEntry({ uuid, name, onSuccess }: { 
             return;
         }
         setIsSubmitting(true);
-        const response = await createOrUpdateLibrary({
+        const response = await upsertLibrary({
             name: values.name, uuid,
         });
 

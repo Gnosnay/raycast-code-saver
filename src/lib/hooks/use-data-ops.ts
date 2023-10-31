@@ -152,7 +152,9 @@ The libray with uuid \`${req.uuid}\` can not be found.
 
         // upsert
         const resSet = await GetDBInstance().insert(LibraryModel)
-            .values({ uuid: req.uuid, name: req.name }).returning();
+            .values({ uuid: req.uuid, name: req.name })
+            .onConflictDoUpdate({ target: LibraryModel.uuid, set: { name: req.name } })
+            .returning();
         const upsetRes = resSet.pop()
         if (upsetRes === undefined) {
             return `# No raleted information returned from database.

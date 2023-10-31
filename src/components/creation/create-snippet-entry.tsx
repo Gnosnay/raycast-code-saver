@@ -29,6 +29,7 @@ export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchPro
     const [fileNameError, setFileNameError] = useState<string | undefined>();
     const [contentError, setContentError] = useState<string | undefined>();
     const [libraryError, setLibraryError] = useState<string | undefined>();
+    const [libraryUUID, setLibraryUUID] = useState<string | undefined>();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const { push } = useNavigation();
@@ -115,6 +116,12 @@ ${err instanceof Error ? err.stack : String(err)}
                 <ActionPanel>
                     <Action.SubmitForm icon={Icon.Check} onSubmit={handleSubmit} title="Save Snippet" />
                     <Action.Push icon={Icon.Plus} target={<CreateOrUpdateLibraryEntry onSuccess={() => revalidateLib()} />} title="Create Library" />
+                    <Action.Push icon={Icon.Brush} target={
+                        <CreateOrUpdateLibraryEntry
+                            uuid={libraryUUID}
+                            name={allLibs?.filter(lib => lib.uuid == libraryUUID)[0]?.name ?? ""}
+                            onSuccess={() => revalidateLib()} />
+                    } title="Update Selected Library" />
                 </ActionPanel>
             }
             navigationTitle={draftValues?.snippetUUID ? "Update Snippet" : "Create New Snippet"}
@@ -173,7 +180,7 @@ ${err instanceof Error ? err.stack : String(err)}
                 } else {
                     dropLibraryErrorIfNeeded();
                 }
-            }}>
+            }} onChange={setLibraryUUID}>
                 {allLibs?.map((lib) => (
                     <Form.Dropdown.Item value={lib.uuid} key={lib.uuid} title={lib.name} icon={getAvatarIcon(lib.name)} />
                 ))}
