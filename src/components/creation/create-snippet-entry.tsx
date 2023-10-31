@@ -172,7 +172,7 @@ ${err instanceof Error ? err.stack : String(err)}
             />
             <Form.Dropdown id="formatType" title="Snippet Content Format">
                 <Form.Dropdown.Item value="freestyle" key="freestyle" title="Freestyle" icon={Icon.Person} />
-                <Form.Dropdown.Item value="tldr" key="tldr" title="TLDR" icon={Icon.Building} />
+                <Form.Dropdown.Item value="tldr" key="tldr" title="TLDR" icon={Icon.BulletPoints} />
             </Form.Dropdown>
             <Form.Dropdown id="libraryUUID" title="Library" error={libraryError} onBlur={(event) => {
                 if (event.target.value?.length === 0) {
