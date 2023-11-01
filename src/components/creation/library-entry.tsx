@@ -1,5 +1,5 @@
 import { Action, ActionPanel, Form, Toast, showToast, useNavigation } from "@raycast/api";
-import { createOrUpdateLibrary as upsertLibrary, useDataFetch } from "../../lib/hooks/use-data-ops";
+import { upsertLibrary, useDataFetch } from "../../lib/hooks/use-data-ops";
 import { Library } from "../../lib/types/dto";
 import InitError from "../init/init-error";
 import { useState } from "react";
@@ -9,7 +9,7 @@ export interface LibraryValues {
     name: string
 }
 
-export default function CreateOrUpdateLibraryEntry({ uuid, name, onSuccess }: { uuid?: string, name?: string, onSuccess: () => void }) {
+export default function UpsertLibraryEntry({ uuid, name, onSuccess }: { uuid?: string, name?: string, onSuccess: () => void }) {
     const { isLoading, data: allLibs, error: loadLibErr } = useDataFetch<Library>('library');
     const [nameError, setNameError] = useState<string | undefined>();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -24,7 +24,7 @@ export default function CreateOrUpdateLibraryEntry({ uuid, name, onSuccess }: { 
 
     async function handleSubmit(values: LibraryValues) {
         if (values.name.length === 0) {
-            setNameError("Snippet title is required");
+            setNameError("Library name is required");
             return;
         }
         setIsSubmitting(true);

@@ -6,7 +6,8 @@ import { SnippetMarkdownFormatType } from "../../lib/constants/db-name";
 import { useState } from "react";
 import { getAvatarIcon } from "@raycast/utils";
 import { labelIcon } from "../../lib/utils/snippet-utils";
-import CreateOrUpdateLibraryEntry from "./library-entry";
+import UpsertLibraryEntry from "./library-entry";
+import UpsertLabelEntry from "./label-entry";
 
 export interface SnippetValues {
     snippetUUID?: string
@@ -20,7 +21,7 @@ export interface SnippetValues {
 
 export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchProps<{ draftValues: SnippetValues }> }) {
     const { isLoading: isLibLoading, data: allLibs, error: loadLibErr, revalidate: revalidateLib } = useDataFetch<Library>('library');
-    const { isLoading: isLabelLoading, data: allLabels, error: loadLabelErr } = useDataFetch<Label>('label');
+    const { isLoading: isLabelLoading, data: allLabels, error: loadLabelErr, revalidate: revalidateLabel } = useDataFetch<Label>('label');
 
     const isLoading = isLibLoading || isLabelLoading;
     const { draftValues } = props;
@@ -115,9 +116,10 @@ ${err instanceof Error ? err.stack : String(err)}
             actions={
                 <ActionPanel>
                     <Action.SubmitForm icon={Icon.Check} onSubmit={handleSubmit} title="Save Snippet" />
-                    <Action.Push icon={Icon.Plus} target={<CreateOrUpdateLibraryEntry onSuccess={() => revalidateLib()} />} title="Create Library" />
+                    <Action.Push icon={Icon.Plus} target={<UpsertLibraryEntry onSuccess={() => revalidateLib()} />} title="Create Library" />
+                    <Action.Push icon={Icon.Plus} target={<UpsertLabelEntry onSuccess={() => revalidateLabel()} />} title="Create Label" />
                     <Action.Push icon={Icon.Brush} target={
-                        <CreateOrUpdateLibraryEntry
+                        <UpsertLibraryEntry
                             uuid={libraryUUID}
                             name={allLibs?.filter(lib => lib.uuid == libraryUUID)[0]?.name ?? ""}
                             onSuccess={() => revalidateLib()} />

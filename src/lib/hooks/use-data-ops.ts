@@ -4,7 +4,7 @@ import { LibraryModel } from "../../schema/library";
 import { SnippetModel } from "../../schema/snippet";
 import { GetDBInstance } from "../storage/db-instance";
 import { desc, inArray, eq } from "drizzle-orm";
-import { Label, Library, LibraryReq, Snippet, SnippetCreationReq } from "../types/dto";
+import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetCreationReq } from "../types/dto";
 import { UsePromiseReturnType } from "@raycast/utils/dist/types";
 import { SnippetLabelModel } from "../../schema/snippet-label";
 import { DB_NAME } from "../constants/db-name";
@@ -125,7 +125,7 @@ ${exc instanceof Error ? exc.stack : String(exc)}
     return undefined
 }
 
-export async function createOrUpdateLibrary(req: LibraryReq): Promise<string | undefined> {
+export async function upsertLibrary(req: LibraryReq): Promise<string | undefined> {
     // when error happened, then return string
     // when update succeed, then return undefined
     // when creation succeed, then return Library
@@ -154,6 +154,57 @@ The libray with uuid \`${req.uuid}\` can not be found.
         const resSet = await GetDBInstance().insert(LibraryModel)
             .values({ uuid: req.uuid, name: req.name })
             .onConflictDoUpdate({ target: LibraryModel.uuid, set: { name: req.name } })
+            .returning();
+        const upsetRes = resSet.pop()
+        if (upsetRes === undefined) {
+            return `# No raleted information returned from database.
+Please contact developer to solve this problem.
+`;
+        }
+        return undefined;
+    } catch (exc) {
+        return `# Failed to create rows in database
+The following steps may help to recover:
+- make sure the folder you give exists
+- make sure we can read and write \`${DB_NAME}\` under the folder you give
+Error details are as follows:
+\`\`\`
+${exc instanceof Error ? exc.stack : String(exc)}
+\`\`\`
+`;
+    }
+}
+
+export async function upsertLabel(req: LabelReq): Promise<string | undefined> {
+    try {
+        if (req.uuid) {
+            const res = await GetDBInstance().query.LabelModel.findFirst({
+                columns: { id: true }, where: eq(LabelModel.uuid, req.uuid),
+            });
+            if (res === undefined) {
+                return `# Can not find related label
+The label with uuid \`${req.uuid}\` can not be found.
+`;
+            }
+        }
+
+        const res = await GetDBInstance().query.LabelModel.findFirst({
+            columns: { id: true }, where: eq(LabelModel.title, req.title),
+        });
+        if (res !== undefined) {
+            return `# Label's title is duplicated.
+\`${req.title}\` is duplicated, please try another title.
+`;
+        }
+
+        // upsert
+        const resSet = await GetDBInstance().insert(LabelModel)
+            .values({ uuid: req.uuid, title: req.title, colorHex: req.colorHex })
+            .onConflictDoUpdate({
+                target: LabelModel.uuid, set: req.colorHex ?
+                    { title: req.title, colorHex: req.colorHex } :
+                    { title: req.title }
+            })
             .returning();
         const upsetRes = resSet.pop()
         if (upsetRes === undefined) {

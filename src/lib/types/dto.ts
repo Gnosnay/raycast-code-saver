@@ -38,3 +38,9 @@ export type LibraryReq = {
     uuid?: string
     name: string
 }
+
+export type LabelReq = {
+    uuid?: string
+    colorHex?: string
+    title: string
+}

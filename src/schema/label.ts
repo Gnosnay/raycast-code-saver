@@ -12,8 +12,8 @@ export const LabelModel = sqliteTable('label_tab', {
     // #ffffff
     colorHex: text('color_hex', { length: 7 }).notNull().$defaultFn(() => {
         // from 127 to 254
-        const getRGB = () => Math.floor(Math.random() * 127) + 127;
-        return ['#', getRGB(), getRGB(), getRGB()].join()
+        const getRGB = () => (Math.floor(Math.random() * 127) + 127).toString(16);
+        return ['#', getRGB(), getRGB(), getRGB()].join('')
     }),
     title: text('title').notNull().unique(),
 });
