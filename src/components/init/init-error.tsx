@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Detail, openExtensionPreferences, } from "@raycast/api";
+import { Action, ActionPanel, Detail, openExtensionPreferences } from "@raycast/api";
 
 export default function InitError({ errMarkdown }: { errMarkdown: string }) {
   return (

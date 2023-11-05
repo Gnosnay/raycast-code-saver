@@ -2,7 +2,6 @@ import { Icon } from "@raycast/api";
 import { format } from "date-fns";
 import { Label } from "../types/dto";
 
-
 export function labelIcon(label: Label) {
   return {
     source: Icon.CircleFilled,

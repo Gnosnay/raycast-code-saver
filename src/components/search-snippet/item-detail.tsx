@@ -1,15 +1,14 @@
 import { List } from "@raycast/api";
-import { Snippet, } from "../../lib/types/dto";
+import { Snippet } from "../../lib/types/dto";
 import { dateFormat } from "../../lib/utils/snippet-utils";
 import { FILE_NAME_EXT_TO_LANG } from "../../lib/constants/programming-language";
 import { getAvatarIcon } from "@raycast/utils";
-
 
 export function ItemDetail({ snippet }: { snippet: Snippet }) {
   const createdAt = dateFormat(snippet.createAt);
   const lastUpdatedAt = dateFormat(snippet.updateAt);
 
-  const codeBlockAnnotation = function (fileName, formatType) {
+  const codeBlockAnnotation = (function (fileName, formatType) {
     if (formatType == "tldr") {
       // tldr will be treated as markdown
       return null;
@@ -19,17 +18,19 @@ export function ItemDetail({ snippet }: { snippet: Snippet }) {
       return null;
     }
     if (extName in FILE_NAME_EXT_TO_LANG) {
-      const key = extName as (keyof typeof FILE_NAME_EXT_TO_LANG);
+      const key = extName as keyof typeof FILE_NAME_EXT_TO_LANG;
       const lang = FILE_NAME_EXT_TO_LANG[key].slice(-1)[0];
       return lang;
     }
     return null;
-  }(snippet.fileName, snippet.formatType);
+  })(snippet.fileName, snippet.formatType);
 
-  const markdown = codeBlockAnnotation != null && codeBlockAnnotation != undefined ?
-    `\`\`\`${codeBlockAnnotation}
+  const markdown =
+    codeBlockAnnotation != null && codeBlockAnnotation != undefined
+      ? `\`\`\`${codeBlockAnnotation}
 ${snippet.content}
-\`\`\``: snippet.content;
+\`\`\``
+      : snippet.content;
 
   return (
     <List.Item.Detail
@@ -40,7 +41,11 @@ ${snippet.content}
           <List.Item.Detail.Metadata.Label title="Filename" text={snippet.fileName} />
           <List.Item.Detail.Metadata.Label title="Created At" text={`${createdAt}`} />
           <List.Item.Detail.Metadata.Label title="Last Updated At" text={`${lastUpdatedAt}`} />
-          <List.Item.Detail.Metadata.Label title="Library" icon={getAvatarIcon(snippet.library.name)} text={snippet.library.name} />
+          <List.Item.Detail.Metadata.Label
+            title="Library"
+            icon={getAvatarIcon(snippet.library.name)}
+            text={snippet.library.name}
+          />
           {snippet.labels.length > 0 && (
             <List.Item.Detail.Metadata.TagList title="Labels">
               {snippet.labels.map((label) => (

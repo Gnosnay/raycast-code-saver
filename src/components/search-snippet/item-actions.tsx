@@ -13,39 +13,49 @@ export function ItemActions({ snippet, onUpdateSuccess }: ItemActionsProps) {
   const { push } = useNavigation();
   return (
     <ActionPanel>
-      {
-        snippet.formatType == "freestyle" ? <>
+      {snippet.formatType == "freestyle" ? (
+        <>
           <Action.CopyToClipboard title="Copy to Clipboard" content={snippet.content} />
           <Action.Paste content={snippet.content} />
-        </> : <Action.Push title="View the Detail" target={<CommandList page={parsePage(snippet)} />} />
-      }
+        </>
+      ) : (
+        <Action.Push title="View the Detail" target={<CommandList page={parsePage(snippet)} />} />
+      )}
 
-      <Action.Push icon={Icon.Brush} title="Update This Snippet" shortcut={Keyboard.Shortcut.Common.Edit}
-        target={<UpsertSnippetEntry props={
-          {
-            ...snippet,
-            snippetUUID: snippet.uuid,
-            labelsUUID: snippet.labels.map(l => l.uuid),
-            libraryUUID: snippet.library.uuid,
-            onUpdateSuccess,
-          }
-        } />} />
-      <Action icon={Icon.DeleteDocument} title="Delete This Snippet" onAction={
-        async () => {
+      <Action.Push
+        icon={Icon.Brush}
+        title="Update This Snippet"
+        shortcut={Keyboard.Shortcut.Common.Edit}
+        target={
+          <UpsertSnippetEntry
+            props={{
+              ...snippet,
+              snippetUUID: snippet.uuid,
+              labelsUUID: snippet.labels.map((l) => l.uuid),
+              libraryUUID: snippet.library.uuid,
+              onUpdateSuccess,
+            }}
+          />
+        }
+      />
+      <Action
+        icon={Icon.DeleteDocument}
+        title="Delete This Snippet"
+        onAction={async () => {
           const err = await deleteSnippet(snippet.uuid);
           if (err != undefined) {
-            push(<InitError errMarkdown={err} />)
+            push(<InitError errMarkdown={err} />);
           }
           if (onUpdateSuccess) {
             onUpdateSuccess();
           }
-        }
-      } shortcut={{ modifiers: ["ctrl"], key: "delete" }} />
+        }}
+        shortcut={{ modifiers: ["ctrl"], key: "delete" }}
+      />
       <Action.CreateSnippet title="Save as Raycast Snippet" snippet={{ name: snippet.title, text: snippet.content }} />
     </ActionPanel>
   );
 }
-
 
 function CommandList(props: { page: Page }) {
   const page = props.page;
@@ -75,12 +85,10 @@ function CommandList(props: { page: Page }) {
   );
 }
 
-
 function OpenCommandWebsiteAction(props: { page: Page }) {
   const page = props.page;
   return page.url ? <Action.OpenInBrowser title="Open Command Website" url={page.url} /> : null;
 }
-
 
 interface Page {
   command: string;
