@@ -152,6 +152,7 @@ ${err instanceof Error ? err.stack : String(err)}
                 }}
                 autoFocus={true}
                 defaultValue={props?.title ?? ""}
+                info="Title is the summary of usage of this snippet"
             />
             <Form.TextField
                 id="fileName"
@@ -167,6 +168,7 @@ ${err instanceof Error ? err.stack : String(err)}
                     }
                 }}
                 defaultValue={props?.fileName ?? ""}
+                info="File name will be used to export snippet"
             />
             <Form.TextArea
                 id="content"
@@ -181,7 +183,8 @@ ${err instanceof Error ? err.stack : String(err)}
                 title="File content"
                 defaultValue={props?.content ?? ""}
             />
-            <Form.Dropdown id="formatType" title="Snippet Content Format">
+            <Form.Dropdown id="formatType" title="Snippet Content Format"
+                info="You can fill anything you want for freestyle format. There will be format check for tldr one.">
                 <Form.Dropdown.Item value="freestyle" key="freestyle" title="Freestyle" icon={Icon.Person} />
                 <Form.Dropdown.Item value="tldr" key="tldr" title="TLDR" icon={Icon.BulletPoints} />
             </Form.Dropdown>
@@ -191,14 +194,15 @@ ${err instanceof Error ? err.stack : String(err)}
                 } else {
                     dropLibraryErrorIfNeeded();
                 }
-            }} onChange={setLibraryUUID}>
+            }} onChange={setLibraryUUID} info="Library is the collection or album of snippets">
                 {allLibs?.map((lib) => (
                     <Form.Dropdown.Item value={lib.uuid} key={lib.uuid} title={lib.name} icon={getAvatarIcon(lib.name)} />
                 ))}
             </Form.Dropdown>
             {
                 allLabels &&
-                <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels} storeValue={true}>
+                <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels} storeValue={true}
+                    info="Tag is used to classify snippets">
                     {allLabels?.map((label) => (
                         <Form.TagPicker.Item key={label.uuid} title={label.title} value={label.uuid} icon={labelIcon(label)} />
                     ))}

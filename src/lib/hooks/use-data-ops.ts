@@ -3,12 +3,11 @@ import { LabelModel } from "../../schema/label";
 import { LibraryModel } from "../../schema/library";
 import { SnippetModel } from "../../schema/snippet";
 import { GetDBInstance } from "../storage/db-instance";
-import { desc, inArray, eq, sql } from "drizzle-orm";
+import { desc, inArray, eq } from "drizzle-orm";
 import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetReq } from "../types/dto";
 import { UsePromiseReturnType } from "@raycast/utils/dist/types";
 import { SnippetLabelModel } from "../../schema/snippet-label";
 import { DB_NAME } from "../constants/db-name";
-import { uuid } from "drizzle-orm/pg-core";
 
 export function useDataFetch<T>(
     data: "label" | "library",

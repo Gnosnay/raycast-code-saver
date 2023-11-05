@@ -36,5 +36,7 @@ CREATE TABLE `snippet_tab` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `label_tab_uuid_unique` ON `label_tab` (`uuid`);--> statement-breakpoint
+CREATE UNIQUE INDEX `label_tab_title_unique` ON `label_tab` (`title`);--> statement-breakpoint
 CREATE UNIQUE INDEX `library_tab_uuid_unique` ON `library_tab` (`uuid`);--> statement-breakpoint
+CREATE UNIQUE INDEX `library_tab_name_unique` ON `library_tab` (`name`);--> statement-breakpoint
 CREATE UNIQUE INDEX `snippet_tab_uuid_unique` ON `snippet_tab` (`uuid`);

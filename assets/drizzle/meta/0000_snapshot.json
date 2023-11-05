@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "dd610c65-cd5a-44f0-aead-7cde452e6a14",
+  "id": "387db5e9-d064-472a-bf52-6c75acc7cea3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "label_tab": {
@@ -57,6 +57,13 @@
             "uuid"
           ],
           "isUnique": true
+        },
+        "label_tab_title_unique": {
+          "name": "label_tab_title_unique",
+          "columns": [
+            "title"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {},
@@ -107,6 +114,13 @@
           "name": "library_tab_uuid_unique",
           "columns": [
             "uuid"
+          ],
+          "isUnique": true
+        },
+        "library_tab_name_unique": {
+          "name": "library_tab_name_unique",
+          "columns": [
+            "name"
           ],
           "isUnique": true
         }
