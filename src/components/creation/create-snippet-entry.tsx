@@ -1,5 +1,5 @@
-import { Action, ActionPanel, Form, Icon, LaunchProps, Toast, popToRoot, showToast, useNavigation } from "@raycast/api";
-import { createSnippet, useDataFetch } from "../../lib/hooks/use-data-ops";
+import { Action, ActionPanel, Form, Icon, Toast, popToRoot, showToast, useNavigation } from "@raycast/api";
+import { upsertSnippet, useDataFetch } from "../../lib/hooks/use-data-ops";
 import { Label, Library } from "../../lib/types/dto";
 import InitError from "../init/init-error";
 import { SnippetMarkdownFormatType } from "../../lib/constants/db-name";
@@ -17,15 +17,15 @@ export interface SnippetValues {
     formatType: SnippetMarkdownFormatType
     libraryUUID: string
     labelsUUID: string[]
+    onUpdateSuccess?: () => void
 }
 
-export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchProps<{ draftValues: SnippetValues }> }) {
+export default function UpsertSnippetEntry({ props }: { props?: SnippetValues }) {
     const { isLoading: isLibLoading, data: allLibs, error: loadLibErr, revalidate: revalidateLib } = useDataFetch<Library>('library');
     const { isLoading: isLabelLoading, data: allLabels, error: loadLabelErr, revalidate: revalidateLabel } = useDataFetch<Label>('label');
 
     const isLoading = isLibLoading || isLabelLoading;
-    const { draftValues } = props;
-    const [labelsUUID, setLabels] = useState<string[]>(draftValues?.labelsUUID ?? []);
+    const [labelsUUID, setLabels] = useState<string[]>(props?.labelsUUID ?? []);
     const [titleError, setTitleError] = useState<string | undefined>();
     const [fileNameError, setFileNameError] = useState<string | undefined>();
     const [contentError, setContentError] = useState<string | undefined>();
@@ -33,7 +33,7 @@ export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchPro
     const [libraryUUID, setLibraryUUID] = useState<string | undefined>();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    const { push } = useNavigation();
+    const { push, pop } = useNavigation();
 
     function dropTitleErrorIfNeeded() {
         if (titleError && titleError.length > 0) {
@@ -73,7 +73,8 @@ export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchPro
             return
         }
         setIsSubmitting(true);
-        const response = await createSnippet({
+        const response = await upsertSnippet({
+            uuid: props?.snippetUUID,
             title: values.title,
             fileName: values.fileName,
             content: values.content,
@@ -88,7 +89,15 @@ export default function CreateOrUpdateSnippetEntry({ props }: { props: LaunchPro
                 title: "Snippet saved",
                 message: `"${values.title}" was saved.`,
             });
-            popToRoot();
+            if (props?.snippetUUID !== undefined) {
+                pop();
+                if (props.onUpdateSuccess) {
+                    props.onUpdateSuccess();
+                }
+            } else {
+                popToRoot();
+            }
+
         } else {
             push(<InitError errMarkdown={response} />)
         }
@@ -111,7 +120,7 @@ ${err instanceof Error ? err.stack : String(err)}
 
     return (errMsg ? <InitError errMarkdown={errMsg} /> :
         <Form
-            enableDrafts
+            enableDrafts={props?.snippetUUID === undefined}
             isLoading={isLoading || isSubmitting}
             actions={
                 <ActionPanel>
@@ -126,7 +135,7 @@ ${err instanceof Error ? err.stack : String(err)}
                     } title="Update Selected Library" />
                 </ActionPanel>
             }
-            navigationTitle={draftValues?.snippetUUID ? "Update Snippet" : "Create New Snippet"}
+            navigationTitle={props?.snippetUUID ? "Update Snippet" : "Create New Snippet"}
         >
             <Form.TextField
                 id="title"
@@ -142,7 +151,7 @@ ${err instanceof Error ? err.stack : String(err)}
                     }
                 }}
                 autoFocus={true}
-                defaultValue={draftValues?.title ?? ""}
+                defaultValue={props?.title ?? ""}
             />
             <Form.TextField
                 id="fileName"
@@ -157,7 +166,7 @@ ${err instanceof Error ? err.stack : String(err)}
                         dropFileNameErrorIfNeeded();
                     }
                 }}
-                defaultValue={draftValues?.fileName ?? ""}
+                defaultValue={props?.fileName ?? ""}
             />
             <Form.TextArea
                 id="content"
@@ -170,7 +179,7 @@ ${err instanceof Error ? err.stack : String(err)}
                     }
                 }}
                 title="File content"
-                defaultValue={draftValues?.content ?? ""}
+                defaultValue={props?.content ?? ""}
             />
             <Form.Dropdown id="formatType" title="Snippet Content Format">
                 <Form.Dropdown.Item value="freestyle" key="freestyle" title="Freestyle" icon={Icon.Person} />
@@ -187,11 +196,14 @@ ${err instanceof Error ? err.stack : String(err)}
                     <Form.Dropdown.Item value={lib.uuid} key={lib.uuid} title={lib.name} icon={getAvatarIcon(lib.name)} />
                 ))}
             </Form.Dropdown>
-            <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels} storeValue={true}>
-                {allLabels?.map((label) => (
-                    <Form.TagPicker.Item key={label.uuid} title={label.title} value={label.uuid} icon={labelIcon(label)} />
-                ))}
-            </Form.TagPicker>
-        </Form>
+            {
+                allLabels &&
+                <Form.TagPicker id="labelsUUID" title="Labels" value={labelsUUID} onChange={setLabels} storeValue={true}>
+                    {allLabels?.map((label) => (
+                        <Form.TagPicker.Item key={label.uuid} title={label.title} value={label.uuid} icon={labelIcon(label)} />
+                    ))}
+                </Form.TagPicker>
+            }
+        </Form >
     );
 }

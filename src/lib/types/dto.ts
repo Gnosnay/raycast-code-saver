@@ -25,7 +25,8 @@ export type Library = {
     name: string
 }
 
-export type SnippetCreationReq = {
+export type SnippetReq = {
+    uuid?: string
     title: string,
     fileName: string,
     content: string,

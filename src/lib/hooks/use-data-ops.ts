@@ -4,7 +4,7 @@ import { LibraryModel } from "../../schema/library";
 import { SnippetModel } from "../../schema/snippet";
 import { GetDBInstance } from "../storage/db-instance";
 import { desc, inArray, eq } from "drizzle-orm";
-import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetCreationReq } from "../types/dto";
+import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetReq } from "../types/dto";
 import { UsePromiseReturnType } from "@raycast/utils/dist/types";
 import { SnippetLabelModel } from "../../schema/snippet-label";
 import { DB_NAME } from "../constants/db-name";
@@ -66,8 +66,19 @@ export function fetchSnippets(): UsePromiseReturnType<Snippet[]> {
     )
 }
 
-export async function createSnippet(req: SnippetCreationReq): Promise<string | undefined> {
+export async function upsertSnippet(req: SnippetReq): Promise<string | undefined> {
     try {
+        if (req.uuid) {
+            const res = await GetDBInstance().query.SnippetModel.findFirst({
+                columns: { id: true }, where: eq(SnippetModel.uuid, req.uuid),
+            });
+            if (res === undefined) {
+                return `# Can not find related snippet
+The snippet with uuid \`${req.uuid}\` can not be found.
+`;
+            }
+        }
+
         // map to {uuid: id}
         const labelUUIDtoID = req.labelsUUID.length === 0 ? {} : Object.fromEntries(
             (await GetDBInstance().select({ id: LabelModel.id, uuid: LabelModel.uuid })
@@ -93,12 +104,23 @@ export async function createSnippet(req: SnippetCreationReq): Promise<string | u
 
         await GetDBInstance().transaction(async txn => {
             const res = await txn.insert(SnippetModel).values({
+                uuid: req.uuid,
                 title: req.title,
                 fileName: req.fileName,
                 content: req.content,
                 formatType: req.formatType,
                 libraryId: libraryID,
+            }).onConflictDoUpdate({
+                target: SnippetModel.uuid,
+                set: {
+                    title: req.title,
+                    fileName: req.fileName,
+                    content: req.content,
+                    formatType: req.formatType,
+                    libraryId: libraryID,
+                }
             }).returning({ id: SnippetModel.id });
+
             const snippetLabelRelations = res.map(
                 snippet => Object.values(labelUUIDtoID).map(labelId => {
                     return {
@@ -108,7 +130,7 @@ export async function createSnippet(req: SnippetCreationReq): Promise<string | u
                 })
             ).flat();
             if (snippetLabelRelations.length > 0) {
-                await txn.insert(SnippetLabelModel).values(snippetLabelRelations);
+                await txn.insert(SnippetLabelModel).values(snippetLabelRelations).onConflictDoNothing();
             }
         });
     } catch (exc) {

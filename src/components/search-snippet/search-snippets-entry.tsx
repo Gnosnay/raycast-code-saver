@@ -9,12 +9,11 @@ import { ItemDetail } from "./item-detail";
 import { SearchBarAccessory } from "./search-bar-accessory";
 
 
-function SnippetItem({ snippet }: { snippet: Snippet }) {
-    console.log("SnippetItem render!!!!")
+function SnippetItem({ snippet, onUpdateSuccess }: { snippet: Snippet, onUpdateSuccess: () => void }) {
     return (
         <List.Item
             title={snippet.title}
-            actions={<ItemActions snippet={snippet} />}
+            actions={<ItemActions snippet={snippet} onUpdateSuccess={onUpdateSuccess} />}
             detail={<ItemDetail snippet={snippet} />}
         />
     );
@@ -23,7 +22,7 @@ function SnippetItem({ snippet }: { snippet: Snippet }) {
 export default function SearchSnippetsEntry() {
     const { isLoading: isLibLoading, data: libraries, error: loadLibErr } = useDataFetch<Library>('library');
     const { isLoading: isLabelLoading, data: labels, error: loadLabelErr } = useDataFetch<Label>('label');
-    const { isLoading: isSnippetLoading, data: snippets, error: loadSnippetErr } = fetchSnippets();
+    const { isLoading: isSnippetLoading, data: snippets, error: loadSnippetErr, revalidate } = fetchSnippets();
 
     const [searchQuery, setSearchQuery] = useState("");
     const [filter, setFilter] = useState<SNIPPETS_FILTER>("all");
@@ -81,7 +80,7 @@ ${err instanceof Error ? err.stack : String(err)}
                 }
             >
                 {(filteredSnippets ? filteredSnippets : []).map((snippet) =>
-                    <SnippetItem key={snippet.uuid} snippet={snippet} />
+                    <SnippetItem key={snippet.uuid} snippet={snippet} onUpdateSuccess={() => revalidate()} />
                 )}
             </List>
     );
