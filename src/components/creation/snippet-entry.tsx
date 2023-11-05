@@ -8,6 +8,8 @@ import { getAvatarIcon } from "@raycast/utils";
 import { labelIcon } from "../../lib/utils/snippet-utils";
 import UpsertLibraryEntry from "./library-entry";
 import UpsertLabelEntry from "./label-entry";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+import { process } from '../../lib/utils/tldr-linter';
 
 export interface SnippetValues {
     snippetUUID?: string
@@ -72,6 +74,24 @@ export default function UpsertSnippetEntry({ props }: { props?: SnippetValues })
             setContentError("File content is required");
             return
         }
+        if (values.formatType == "tldr") {
+            const res = process("Some thing wrong with your input", values.content, true, false,);
+            console.log(res);
+            if (!res.success) {
+                push(<InitError errMarkdown={`# There are some syntax error for your input.
+You can visit following link to have one look about the syntax of \`tldr\`.
+
+Ref link: https://github.com/tldr-pages/tldr/blob/main/contributing-guides/style-guide.md
+
+We found the error here:
+\`\`\`
+${res.errorMsg.map(l => l.endsWith("\n") ? l : l + "\n").join("")}
+\`\`\`
+`} />)
+                return
+            }
+        }
+
         setIsSubmitting(true);
         const response = await upsertSnippet({
             uuid: props?.snippetUUID,
