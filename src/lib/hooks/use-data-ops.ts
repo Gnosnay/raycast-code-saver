@@ -3,11 +3,12 @@ import { LabelModel } from "../../schema/label";
 import { LibraryModel } from "../../schema/library";
 import { SnippetModel } from "../../schema/snippet";
 import { GetDBInstance } from "../storage/db-instance";
-import { desc, inArray, eq } from "drizzle-orm";
+import { desc, inArray, eq, sql } from "drizzle-orm";
 import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetReq } from "../types/dto";
 import { UsePromiseReturnType } from "@raycast/utils/dist/types";
 import { SnippetLabelModel } from "../../schema/snippet-label";
 import { DB_NAME } from "../constants/db-name";
+import { uuid } from "drizzle-orm/pg-core";
 
 export function useDataFetch<T>(
     data: "label" | "library",
@@ -246,4 +247,36 @@ ${exc instanceof Error ? exc.stack : String(exc)}
 \`\`\`
 `;
     }
+}
+
+export async function deleteSnippet(snippetUUID: string): Promise<string | undefined> {
+    try {
+        const res = await GetDBInstance().query.SnippetModel.findFirst({
+            columns: { id: true }, where: eq(SnippetModel.uuid, snippetUUID),
+        });
+        if (res === undefined) {
+            return `# Can not find related label
+The label with uuid \`${snippetUUID}\` can not be found.
+`;
+        }
+        await GetDBInstance().transaction(async txn => {
+            await txn.delete(SnippetLabelModel).where(
+                eq(SnippetLabelModel.snippetId, res.id)
+            );
+            await txn.delete(SnippetModel).where(
+                eq(SnippetModel.uuid, snippetUUID)
+            );
+        });
+    } catch (exc) {
+        return `# Failed to create rows in database
+The following steps may help to recover:
+- make sure the folder you give exists
+- make sure we can read and write \`${DB_NAME}\` under the folder you give
+Error details are as follows:
+\`\`\`
+${exc instanceof Error ? exc.stack : String(exc)}
+\`\`\`
+`;
+    }
+    return undefined
 }
