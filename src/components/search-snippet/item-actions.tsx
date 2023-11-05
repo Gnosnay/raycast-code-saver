@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Icon, Keyboard, useNavigation } from "@raycast/api";
 import { Snippet } from "../../lib/types/dto";
-import UpsertSnippetEntry from "../creation/create-snippet-entry";
+import UpsertSnippetEntry from "../creation/snippet-entry";
 import { deleteSnippet } from "../../lib/hooks/use-data-ops";
 import InitError from "../init/init-error";
 
