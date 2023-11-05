@@ -234,6 +234,7 @@ ${err instanceof Error ? err.stack : String(err)}
       <Form.Dropdown
         id="formatType"
         title="Snippet Content Format"
+        defaultValue={props?.formatType}
         info="You can fill anything you want for freestyle format. There will be format check for tldr one."
       >
         <Form.Dropdown.Item value="freestyle" key="freestyle" title="Freestyle" icon={Icon.Person} />
@@ -243,6 +244,7 @@ ${err instanceof Error ? err.stack : String(err)}
         id="libraryUUID"
         title="Library"
         error={libraryError}
+        defaultValue={props?.libraryUUID}
         onBlur={(event) => {
           if (event.target.value?.length === 0) {
             setLibraryError("Library is required");
