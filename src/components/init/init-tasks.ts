@@ -1,16 +1,60 @@
 import { None, Option, Some } from "ts-results-es";
 import { DB_NAME, MIGRATIONS_FOLDER } from "../../lib/constants/db-name";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { GetDBInstance, UserDefinedDBPath } from "../../lib/storage/db-instance";
+import {
+  GetDBInstance,
+  SqliteBindingFolder,
+  SqliteBindingPath,
+  UserDefinedDBPath,
+} from "../../lib/storage/db-instance";
 import { resolve } from "path";
 import { environment, getPreferenceValues } from "@raycast/api";
 import * as async_fs from "fs/promises";
+import fs from "fs";
 import dayjs from "dayjs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { arch } from "os";
+import { DownloadFile, ExtractAndRewrite } from "../../lib/utils/download-file";
 
 export type InitErrorMarkDown = string;
 export type InitTaskFunc = () => Promise<Option<InitErrorMarkDown>>;
 
 const newBackUpDBPath = `${UserDefinedDBPath}.${new Date().toLocaleDateString("en-CA")}`;
+
+export const downloadDependency: InitTaskFunc = async () => {
+  const downloadLink = `https://github.com/m4heshd/better-sqlite3-multiple-ciphers/releases/download/${"v8.7.0"}/better-sqlite3-multiple-ciphers-${"v8.7.0"}-node-v${
+    process.versions.modules
+  }-darwin-${arch()}.tar.gz`;
+
+  try {
+    if (fs.existsSync(SqliteBindingPath)) {
+      return None;
+    }
+    if (!fs.existsSync(SqliteBindingFolder)) {
+      fs.mkdirSync(SqliteBindingFolder, { recursive: true });
+    }
+    const tmpDir = tmpdir();
+    const tmpFile = join(tmpDir, "tmp.tar.gz");
+    console.log("tmp dir: ", tmpDir);
+    console.log("tmp file: ", tmpFile);
+    await DownloadFile(downloadLink, tmpFile);
+
+    await ExtractAndRewrite(tmpFile, "build/Release/better_sqlite3.node", SqliteBindingPath);
+  } catch (exc) {
+    const errMarkdown = `# Failed to download dependency.
+The following steps may help to recover:
+1. Download this file: ${downloadLink}.
+2. Uncompress it and rename the file \`better_sqlite3.node\` and place it to \`${SqliteBindingPath}\`.
+Error details are as follows:
+\`\`\`
+${exc instanceof Error ? exc.stack : String(exc)}
+\`\`\`
+`;
+    return Some(errMarkdown);
+  }
+  return None;
+};
 
 export const checkDBStorePath: InitTaskFunc = async () => {
   try {

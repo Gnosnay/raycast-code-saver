@@ -1,7 +1,14 @@
 import { Action, ActionPanel, Detail } from "@raycast/api";
 import { FC, useState, useEffect } from "react";
 import InitError from "./init-error";
-import { checkDBStorePath, upgradeDBSchema, InitTaskFunc, backupDB, InitErrorMarkDown } from "./init-tasks";
+import {
+  checkDBStorePath,
+  upgradeDBSchema,
+  InitTaskFunc,
+  backupDB,
+  InitErrorMarkDown,
+  downloadDependency,
+} from "./init-tasks";
 
 export interface InitWrapperProps {
   children: React.ReactNode;
@@ -20,6 +27,7 @@ type InitTask = [InitTaskStatus, TaskDescOrErrMsg, InitTaskFunc];
 export const InitWrapper: FC<InitWrapperProps> = ({ children }) => {
   console.log("rendering!");
   const [initTasks, setInitTasks] = useState<InitTask[]>([
+    ["❓", "download dependency", downloadDependency],
     ["❓", "check db store path", checkDBStorePath],
     ["❓", "backup the DB Store", backupDB],
     ["❓", "upgrade db schema", upgradeDBSchema],
