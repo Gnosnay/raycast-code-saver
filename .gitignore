@@ -11,4 +11,4 @@ raycast-env.d.ts
 
 # prisma
 .env
-dev.db*
+*.db*
