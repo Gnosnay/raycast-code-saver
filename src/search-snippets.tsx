@@ -1,13 +1,10 @@
-import { List } from "@raycast/api";
-import { InitWrapper } from "./components/init-wrapper";
+import { InitWrapper } from "./components/init/init-wrapper";
+import SearchSnippetsEntry from "./components/search-snippet/search-snippets-entry";
 
 export default function SearchSnippets() {
   return (
     <InitWrapper>
-      <List
-        searchBarPlaceholder="Search Snippets"
-      >
-      </List>
+      <SearchSnippetsEntry />
     </InitWrapper>
   );
 }
