@@ -23,7 +23,7 @@ export type InitTaskFunc = () => Promise<Option<InitErrorMarkDown>>;
 const newBackUpDBPath = `${UserDefinedDBPath}.${new Date().toLocaleDateString("en-CA")}`;
 
 export const downloadDependency: InitTaskFunc = async () => {
-  const downloadLink = `https://github.com/m4heshd/better-sqlite3-multiple-ciphers/releases/download/${"v8.7.0"}/better-sqlite3-multiple-ciphers-${"v8.7.0"}-node-v${
+  const downloadLink = `https://github.com/m4heshd/better-sqlite3-multiple-ciphers/releases/download/${"v11.9.1"}/better-sqlite3-multiple-ciphers-${"v11.9.1"}-node-v${
     process.versions.modules
   }-darwin-${arch()}.tar.gz`;
 
