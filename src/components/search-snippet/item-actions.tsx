@@ -53,7 +53,12 @@ export function ItemActions({ snippet, onUpdateSuccess }: ItemActionsProps) {
         }}
         shortcut={{ modifiers: ["ctrl"], key: "delete" }}
       />
-      <Action.CreateSnippet title="Save as Raycast Snippet" snippet={{ name: snippet.title, text: snippet.content }} />
+      {!process.versions.tinycast && (
+        <Action.CreateSnippet
+          title="Save as Raycast Snippet"
+          snippet={{ name: snippet.title, text: snippet.content }}
+        />
+      )}
     </ActionPanel>
   );
 }

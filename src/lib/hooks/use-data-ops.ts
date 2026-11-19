@@ -1,290 +1,144 @@
 import { usePromise } from "@raycast/utils";
+import { desc, eq, inArray } from "drizzle-orm";
 import { LabelModel } from "../../schema/label";
 import { LibraryModel } from "../../schema/library";
 import { SnippetModel } from "../../schema/snippet";
-import { GetDBInstance } from "../storage/db-instance";
-import { desc, inArray, eq } from "drizzle-orm";
-import { Label, LabelReq, Library, LibraryReq, Snippet, SnippetReq } from "../types/dto";
-import { UsePromiseReturnType } from "@raycast/utils/dist/types";
 import { SnippetLabelModel } from "../../schema/snippet-label";
-import { DB_NAME } from "../constants/db-name";
+import { readDatabase, writeDatabase } from "../storage/db-instance";
+import { LabelReq, LibraryReq, Snippet, SnippetReq } from "../types/dto";
 
 export function useDataFetch<T>(data: "label" | "library") {
-  // for now we just return all data as default
-  // because raycast doesn't have hit bottom loading
-  // or next page feature
-  const model = (function (t: typeof data) {
-    switch (t) {
-      case "label":
-        return LabelModel;
-      case "library":
-        return LibraryModel;
-    }
-  })(data);
-
   return usePromise(
-    async (model) => {
-      const response = await GetDBInstance().select().from(model).orderBy(model.uuid);
-      return response as T[];
-    },
-    [model]
+    async (kind: typeof data) =>
+      readDatabase(async (db) => {
+        const model = kind === "label" ? LabelModel : LibraryModel;
+        return (await db.select().from(model).orderBy(model.uuid)) as T[];
+      }),
+    [data]
   );
 }
 
-export function fetchSnippets(): UsePromiseReturnType<Snippet[]> {
-  return usePromise(async () => {
-    const snippets = await GetDBInstance().query.SnippetModel.findMany({
-      with: {
-        snippetsToLabels: {
-          with: {
-            label: {
-              columns: {
-                uuid: true,
-                colorHex: true,
-                title: true,
-              },
-            },
-          },
-        },
-        library: { columns: { uuid: true, name: true } },
-      },
-      orderBy: [desc(SnippetModel.uuid), desc(SnippetModel.updateAt)],
-    });
-    return snippets.map((s) => {
-      return {
-        ...s,
-        library: s.library as Library,
-        labels: s.snippetsToLabels.map((relation) => relation.label as Label),
-      } as Snippet;
-    });
-  }, []);
-}
-
-export async function upsertSnippet(req: SnippetReq): Promise<string | undefined> {
-  try {
-    if (req.uuid) {
-      const res = await GetDBInstance().query.SnippetModel.findFirst({
-        columns: { id: true },
-        where: eq(SnippetModel.uuid, req.uuid),
-      });
-      if (res === undefined) {
-        return `# Can not find related snippet
-The snippet with uuid \`${req.uuid}\` can not be found.
-`;
-      }
-    }
-
-    // map to {uuid: id}
-    const labelUUIDtoID =
-      req.labelsUUID.length === 0
-        ? {}
-        : Object.fromEntries(
-            (
-              await GetDBInstance()
-                .select({ id: LabelModel.id, uuid: LabelModel.uuid })
-                .from(LabelModel)
-                .where(inArray(LabelModel.uuid, req.labelsUUID))
-            ).map((e) => [e.uuid, e.id])
-          );
-    const libraryIDRes = await GetDBInstance().query.LibraryModel.findFirst({
-      columns: { id: true },
-      where: eq(LibraryModel.uuid, req.libraryUUID),
-    });
-    if (Object.keys(labelUUIDtoID).length != req.labelsUUID.length) {
-      return `# Can not find related labels
-    The labels with following uuid can not be found:
-    \`${JSON.stringify(Object.keys(labelUUIDtoID).filter((k) => !req.labelsUUID.includes(k)))}\`
-    `;
-    }
-    if (libraryIDRes === undefined) {
-      return `# Can not find related library
-    The libray with uuid \`${req.libraryUUID}\` can not be found.
-    `;
-    }
-    const { id: libraryID } = libraryIDRes;
-
-    await GetDBInstance().transaction(async (txn) => {
-      const res = await txn
-        .insert(SnippetModel)
-        .values({
-          uuid: req.uuid,
-          title: req.title,
-          fileName: req.fileName,
-          content: req.content,
-          formatType: req.formatType,
-          libraryId: libraryID,
-        })
-        .onConflictDoUpdate({
-          target: SnippetModel.uuid,
-          set: {
-            title: req.title,
-            fileName: req.fileName,
-            content: req.content,
-            formatType: req.formatType,
-            libraryId: libraryID,
-          },
-        })
-        .returning({ id: SnippetModel.id });
-
-      const snippetLabelRelations = res
-        .map((snippet) =>
-          Object.values(labelUUIDtoID).map((labelId) => {
-            return {
-              snippetId: snippet.id,
-              labelId: labelId,
-            };
+export function fetchSnippets() {
+  return usePromise(
+    async () =>
+      readDatabase(async (db) => {
+        const rows = await db
+          .select({
+            snippet: SnippetModel,
+            library: { uuid: LibraryModel.uuid, name: LibraryModel.name },
+            label: { uuid: LabelModel.uuid, title: LabelModel.title, colorHex: LabelModel.colorHex },
           })
-        )
-        .flat();
-      if (snippetLabelRelations.length > 0) {
-        await txn.insert(SnippetLabelModel).values(snippetLabelRelations).onConflictDoNothing();
-      }
-    });
-  } catch (exc) {
-    return `# Failed to create rows in database
-The following steps may help to recover:
-- make sure the folder you give exists
-- make sure we can read and write \`${DB_NAME}\` under the folder you give
-Error details are as follows:
-\`\`\`
-${exc instanceof Error ? exc.stack : String(exc)}
-\`\`\`
-`;
-  }
-  return undefined;
+          .from(SnippetModel)
+          .leftJoin(LibraryModel, eq(SnippetModel.libraryId, LibraryModel.id))
+          .leftJoin(SnippetLabelModel, eq(SnippetModel.id, SnippetLabelModel.snippetId))
+          .leftJoin(LabelModel, eq(LabelModel.id, SnippetLabelModel.labelId))
+          .orderBy(desc(SnippetModel.uuid), desc(SnippetModel.updateAt));
+        const snippets = new Map<number, Snippet>();
+        for (const { snippet, library, label } of rows) {
+          let entry = snippets.get(snippet.id);
+          if (!entry) {
+            // Keep orphaned snippets visible; editing one lets the user pick a valid library.
+            entry = { ...snippet, library: library ?? { uuid: "", name: "(missing library)" }, labels: [] };
+            snippets.set(snippet.id, entry);
+          }
+          if (label) entry.labels.push(label);
+        }
+        return [...snippets.values()];
+      }),
+    []
+  );
 }
 
-export async function upsertLibrary(req: LibraryReq): Promise<string | undefined> {
-  // when error happened, then return string
-  // when update succeed, then return undefined
-  // when creation succeed, then return Library
+type WriteAction = Parameters<typeof writeDatabase<void>>[0];
+
+async function save(action: WriteAction): Promise<string | undefined> {
   try {
-    if (req.uuid) {
-      const res = await GetDBInstance().query.LibraryModel.findFirst({
-        columns: { id: true },
-        where: eq(LibraryModel.uuid, req.uuid),
-      });
-      if (res === undefined) {
-        return `# Can not find related library
-The libray with uuid \`${req.uuid}\` can not be found.
-`;
-      }
-    }
+    await writeDatabase(action);
+  } catch (error) {
+    return `## Could not save the change\n\n${error instanceof Error ? error.message : String(error)}`;
+  }
+}
 
-    const res = await GetDBInstance().query.LibraryModel.findFirst({
-      columns: { id: true },
-      where: eq(LibraryModel.name, req.name),
-    });
-    if (res !== undefined) {
-      return `# Library's name is duplicated.
-\`${req.name}\` is duplicated, please try another name.
-`;
+export function upsertSnippet(req: SnippetReq) {
+  return save(async (db) => {
+    if (
+      req.uuid &&
+      !(await db.select({ id: SnippetModel.id }).from(SnippetModel).where(eq(SnippetModel.uuid, req.uuid))).length
+    ) {
+      throw new Error(`Cannot find snippet ${req.uuid}.`);
     }
+    const [library] = await db
+      .select({ id: LibraryModel.id })
+      .from(LibraryModel)
+      .where(eq(LibraryModel.uuid, req.libraryUUID));
+    if (!library) throw new Error(`Cannot find library ${req.libraryUUID}.`);
+    const labels = req.labelsUUID.length
+      ? await db.select({ id: LabelModel.id }).from(LabelModel).where(inArray(LabelModel.uuid, req.labelsUUID))
+      : [];
+    if (labels.length !== req.labelsUUID.length) throw new Error("A selected label no longer exists.");
+    const values = {
+      title: req.title,
+      fileName: req.fileName,
+      content: req.content,
+      formatType: req.formatType,
+      libraryId: library.id,
+    };
+    const [snippet] = await db
+      .insert(SnippetModel)
+      .values({ uuid: req.uuid, ...values })
+      .onConflictDoUpdate({ target: SnippetModel.uuid, set: values })
+      .returning({ id: SnippetModel.id });
+    if (labels.length) {
+      await db
+        .insert(SnippetLabelModel)
+        .values(labels.map((label) => ({ snippetId: snippet.id, labelId: label.id })))
+        .onConflictDoNothing();
+    }
+  });
+}
 
-    // upsert
-    const resSet = await GetDBInstance()
+export function upsertLibrary(req: LibraryReq) {
+  return save(async (db) => {
+    if (
+      req.uuid &&
+      !(await db.select({ id: LibraryModel.id }).from(LibraryModel).where(eq(LibraryModel.uuid, req.uuid))).length
+    ) {
+      throw new Error(`Cannot find library ${req.uuid}.`);
+    }
+    if ((await db.select({ id: LibraryModel.id }).from(LibraryModel).where(eq(LibraryModel.name, req.name))).length) {
+      throw new Error(`A library named ${req.name} already exists.`);
+    }
+    await db
       .insert(LibraryModel)
       .values({ uuid: req.uuid, name: req.name })
-      .onConflictDoUpdate({ target: LibraryModel.uuid, set: { name: req.name } })
-      .returning();
-    const upsetRes = resSet.pop();
-    if (upsetRes === undefined) {
-      return `# No raleted information returned from database.
-Please contact developer to solve this problem.
-`;
-    }
-    return undefined;
-  } catch (exc) {
-    return `# Failed to create rows in database
-The following steps may help to recover:
-- make sure the folder you give exists
-- make sure we can read and write \`${DB_NAME}\` under the folder you give
-Error details are as follows:
-\`\`\`
-${exc instanceof Error ? exc.stack : String(exc)}
-\`\`\`
-`;
-  }
+      .onConflictDoUpdate({ target: LibraryModel.uuid, set: { name: req.name } });
+  });
 }
 
-export async function upsertLabel(req: LabelReq): Promise<string | undefined> {
-  try {
-    if (req.uuid) {
-      const res = await GetDBInstance().query.LabelModel.findFirst({
-        columns: { id: true },
-        where: eq(LabelModel.uuid, req.uuid),
-      });
-      if (res === undefined) {
-        return `# Can not find related label
-The label with uuid \`${req.uuid}\` can not be found.
-`;
-      }
+export function upsertLabel(req: LabelReq) {
+  return save(async (db) => {
+    if (
+      req.uuid &&
+      !(await db.select({ id: LabelModel.id }).from(LabelModel).where(eq(LabelModel.uuid, req.uuid))).length
+    ) {
+      throw new Error(`Cannot find label ${req.uuid}.`);
     }
-
-    const res = await GetDBInstance().query.LabelModel.findFirst({
-      columns: { id: true },
-      where: eq(LabelModel.title, req.title),
-    });
-    if (res !== undefined) {
-      return `# Label's title is duplicated.
-\`${req.title}\` is duplicated, please try another title.
-`;
+    if ((await db.select({ id: LabelModel.id }).from(LabelModel).where(eq(LabelModel.title, req.title))).length) {
+      throw new Error(`A label named ${req.title} already exists.`);
     }
-
-    // upsert
-    const resSet = await GetDBInstance()
+    const values = { title: req.title, colorHex: req.colorHex };
+    await db
       .insert(LabelModel)
-      .values({ uuid: req.uuid, title: req.title, colorHex: req.colorHex })
-      .onConflictDoUpdate({
-        target: LabelModel.uuid,
-        set: req.colorHex ? { title: req.title, colorHex: req.colorHex } : { title: req.title },
-      })
-      .returning();
-    const upsetRes = resSet.pop();
-    if (upsetRes === undefined) {
-      return `# No raleted information returned from database.
-Please contact developer to solve this problem.
-`;
-    }
-    return undefined;
-  } catch (exc) {
-    return `# Failed to create rows in database
-The following steps may help to recover:
-- make sure the folder you give exists
-- make sure we can read and write \`${DB_NAME}\` under the folder you give
-Error details are as follows:
-\`\`\`
-${exc instanceof Error ? exc.stack : String(exc)}
-\`\`\`
-`;
-  }
+      .values({ uuid: req.uuid, ...values })
+      .onConflictDoUpdate({ target: LabelModel.uuid, set: values });
+  });
 }
 
-export async function deleteSnippet(snippetUUID: string): Promise<string | undefined> {
-  try {
-    const res = await GetDBInstance().query.SnippetModel.findFirst({
-      columns: { id: true },
-      where: eq(SnippetModel.uuid, snippetUUID),
-    });
-    if (res === undefined) {
-      return `# Can not find related label
-The label with uuid \`${snippetUUID}\` can not be found.
-`;
-    }
-    await GetDBInstance().transaction(async (txn) => {
-      await txn.delete(SnippetLabelModel).where(eq(SnippetLabelModel.snippetId, res.id));
-      await txn.delete(SnippetModel).where(eq(SnippetModel.uuid, snippetUUID));
-    });
-  } catch (exc) {
-    return `# Failed to create rows in database
-The following steps may help to recover:
-- make sure the folder you give exists
-- make sure we can read and write \`${DB_NAME}\` under the folder you give
-Error details are as follows:
-\`\`\`
-${exc instanceof Error ? exc.stack : String(exc)}
-\`\`\`
-`;
-  }
-  return undefined;
+export function deleteSnippet(uuid: string) {
+  return save(async (db) => {
+    const [snippet] = await db.select({ id: SnippetModel.id }).from(SnippetModel).where(eq(SnippetModel.uuid, uuid));
+    if (!snippet) throw new Error(`Cannot find snippet ${uuid}.`);
+    await db.delete(SnippetLabelModel).where(eq(SnippetLabelModel.snippetId, snippet.id));
+    await db.delete(SnippetModel).where(eq(SnippetModel.id, snippet.id));
+  });
 }

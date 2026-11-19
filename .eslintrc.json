@@ -1,4 +1,5 @@
 {
   "root": true,
+  "ignorePatterns": ["src/vendor/sqlite3mc/index.js"],
   "extends": ["@raycast"]
 }

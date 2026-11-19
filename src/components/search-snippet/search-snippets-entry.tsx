@@ -32,7 +32,7 @@ export default function SearchSnippetsEntry() {
   const [filter, setFilter] = useState<SNIPPETS_FILTER>("all");
   const isLoading = isLabelLoading || isLibLoading || isSnippetLoading;
   const errMsg = (function (err) {
-    if (loadLabelErr !== undefined) {
+    if (err !== undefined) {
       return `# Something wrong
 Some errors happened when fetching labels, libraries or snippets from database. 
 Error details are as follows:

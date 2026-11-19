@@ -2,6 +2,14 @@
 
 One local-first snippet management extension for raycast. Store your code snippets and export them freely when you need it.
 
+## Install in Tinycast
+
+1. Open **Settings → Extensions → Install New → Install from GitHub**.
+2. Enter `https://github.com/Gnosnay/raycast-code-saver`, select **npm**, and click **Install**. Keep the panel open while Tinycast builds the extension. This step requires Node.js and npm on the Mac.
+3. Open **Search Code Snippets**. To use an existing store, choose the folder containing `code-saver.db` and enter its original encryption key.
+
+If you have the prebuilt ZIP, unzip it and select the extracted `code-saver` folder under **Install New → Add from folder**. This installation method and the installed extension run without a separate Node.js installation.
+
 ## Usage
 
 ### Create one new snippet
@@ -55,3 +63,9 @@ This is one pure **local managed** code snippets store. You should
 We use [multiple cipher](https://utelle.github.io/SQLite3MultipleCiphers/) to encrypt the sqlite data store.
 
 The cipher we used is `AES 256 Bit` provided by `wxSQLite3`. You can see the details [here](https://utelle.github.io/SQLite3MultipleCiphers/docs/ciphers/cipher_aes256cbc/) and [here](https://github.com/utelle/wxsqlite3).
+
+### Using the same store in Raycast and Tinycast
+
+Choose the same local store folder and encryption key in both extensions. Code Saver includes SQLite3 Multiple Ciphers 2.7.1 for WebAssembly. Each host runs it directly. Existing wxSQLite3 AES-256 databases can open with their original key. The bundled WASM and JS loader come from the [SQLite3MC 2.7.1 release](https://github.com/utelle/SQLite3MultipleCiphers/releases/tag/v2.7.1). The loader exposes two virtual filesystem operations so Code Saver can read the encrypted bytes after closing SQLite and release the in-memory file.
+
+Both installations must use the WASM version to edit the same file concurrently. They share a `code-saver.db.lock` file. macOS releases the lock when its descriptor closes. The empty lock file stays in the store folder between saves. Code Saver refreshes the dated encrypted backup before it applies schema migrations.
